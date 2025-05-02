@@ -1,1 +1,25 @@
+license_status = {"valid": True}
 
+def check_license_once():
+    try:
+        resp = requests.post("https://get-modfree.khonickgiare.vn/check_license.php", json={"key": license_key}, timeout=10, proxies={"http": None, "https": None})
+        data = resp.json()
+
+        if data.get("status") == "success":
+            expires_at = data.get("expires_at")
+            if expires_at:
+                expire_time = datetime.strptime(expires_at, "%Y-%m-%d %H:%M:%S")
+                if expire_time > datetime.now():
+                    license_status["valid"] = True
+                    print(f"[LICENSE] Hợp lệ, hết hạn: {expires_at}")
+                    return
+                else:
+                    print("[LICENSE] License đã hết hạn.")
+            else:
+                print("[LICENSE] Không tìm thấy thời gian hết hạn.")
+        else:
+            print("[LICENSE] License không hợp lệ.")
+    except Exception as e:
+        print(f"[LICENSE] Lỗi kết nối hoặc dữ liệu: {e}")
+
+    license_status["valid"] = False  # Cập nhật cờ trạng thái license
