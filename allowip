@@ -23,3 +23,44 @@ def check_license_once():
         print(f"[LICENSE] Lỗi kết nối hoặc dữ liệu: {e}")
 
     license_status["valid"] = False  # Cập nhật cờ trạng thái license
+def check_license_periodically():
+    while True:
+        check_license_once()
+        time.sleep(30)
+
+# Gọi 1 lần khi khởi động, nếu sai thì thoát
+check_license_once()
+if not license_status["valid"]:
+    os._exit(1)
+
+# Sau đó kiểm tra định kỳ
+threading.Thread(target=check_license_periodically, daemon=True).start()
+def is_ip_allowed(client_ip):
+    allowed = False
+    valid_lines = []
+    now = datetime.now()
+
+    if not os.path.exists("ip.txt"):
+        return False
+
+    with open("ip.txt", "r") as f:
+        lines = f.readlines()
+
+    for line in lines:
+        if "|" not in line:
+            continue
+        ip, datetime_str = line.strip().split("|")
+        try:
+            expire = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+        except:
+            continue
+
+        if expire >= now:
+            valid_lines.append(f"{ip}|{datetime_str}\n")
+            if ip == client_ip:
+                allowed = True
+
+    with open("ip.txt", "w") as f:
+        f.writelines(valid_lines)
+
+    return allowed
